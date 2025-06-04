@@ -4,8 +4,8 @@ namespace Radar.Integrations;
 
 public class TelegramBot
 {
-    private readonly string _botToken = "7744393635:AAHl1ZvcaWzD3-jqt2_fJelAkREmnr62_ok";
-    private readonly string _chatId = "6733962801";
+    private readonly string _botToken = Environment.GetEnvironmentVariable("BOT_TOKEN")!;
+    private readonly string _chatId = Environment.GetEnvironmentVariable("CHAT_ID")!;
 
     public async Task EnviarMensagemAsync(string mensagem)
     {
