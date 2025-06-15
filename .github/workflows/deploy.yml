@@ -16,6 +16,8 @@ jobs:
 
       - name: Log in to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
+        with:
+          region: ${{ secrets.AWS_REGION }}
 
       - name: Build, tag, and push Docker image to ECR
         env:
@@ -27,5 +29,4 @@ jobs:
           docker build -t $ECR_REPOSITORY radar/
           docker tag $ECR_REPOSITORY:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest
           docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest
-
 
