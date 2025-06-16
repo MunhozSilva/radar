@@ -64,4 +64,4 @@ WORKDIR /var/task
 COPY --from=build /app/publish .
 
 # Define o entrypoint da Lambda
-CMD [ "Radar::Radar.Function::FunctionHandler" ]
+CMD ["Radar.Function::FunctionHandler"]
