@@ -1,11 +1,12 @@
-# Stage 1: Runtime base com Chrome + ChromeDriver
-FROM mcr.microsoft.com/dotnet/runtime:9.0 AS runtime-base
+# Stage 1: Runtime base
+FROM mcr.microsoft.com/dotnet/runtime:9.0 AS base
 WORKDIR /app
 
-# Instala dependências do Chrome
+# Instala dependências para o Chrome e o ChromeDriver
 RUN apt-get update && apt-get install -y \
-    wget \
-    unzip \
+    ca-certificates \
+    curl \
+    gnupg \
     fontconfig \
     libx11-dev \
     libxss1 \
@@ -22,42 +23,45 @@ RUN apt-get update && apt-get install -y \
     libxdamage1 \
     libxrandr2 \
     xdg-utils \
-    --no-install-recommends && \
-    rm -rf /var/lib/apt/lists/*
+    unzip \
+    --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/*
 
 # Instala o Google Chrome
-RUN mkdir -p /etc/apt/keyrings && \
-    wget -q -O /etc/apt/keyrings/google-chrome.gpg https://dl.google.com/linux/linux_signing_key.pub && \
-    echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" \
-        > /etc/apt/sources.list.d/google-chrome.list && \
-    apt-get update && \
-    apt-get install -y google-chrome-stable && \
-    rm -rf /var/lib/apt/lists/*
+RUN mkdir -p /etc/apt/keyrings \
+    && curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /etc/apt/keyrings/google-chrome.gpg \
+    && echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" \
+        | tee /etc/apt/sources.list.d/google-chrome.list \
+    && apt-get update \
+    && apt-get install -y google-chrome-stable \
+    && rm -rf /var/lib/apt/lists/*
 
-# Instala o ChromeDriver compatível
-RUN CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | cut -d '.' -f 1) && \
-    CHROMEDRIVER_VERSION=$(wget -qO- https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROME_VERSION) && \
-    wget -O /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/$CHROMEDRIVER_VERSION/chromedriver_linux64.zip && \
-    unzip /tmp/chromedriver.zip -d /usr/local/bin/ && \
-    rm /tmp/chromedriver.zip && \
-    chmod +x /usr/local/bin/chromedriver
+# Instala o ChromeDriver compatível com a versão do Chrome
+RUN CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | cut -d '.' -f 1) \
+    && CHROMEDRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION}") \
+    && curl -Lo /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip \
+    && unzip /tmp/chromedriver.zip -d /usr/local/bin/ \
+    && rm /tmp/chromedriver.zip \
+    && chmod +x /usr/local/bin/chromedriver
 
-# Stage 2: Build
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+# Stage 2: Build + Publish
+FROM public.ecr.aws/lambda/dotnet:9 AS build
 WORKDIR /src
+
+# Copia e restaura dependências
 COPY ["radar.csproj", "./"]
 RUN dotnet restore "radar.csproj"
-COPY . .
-RUN dotnet build "radar.csproj" -c Release -o /app/build
 
-# Stage 3: Publish
-FROM build AS publish
+# Copia tudo e compila
+COPY . .
 RUN dotnet publish "radar.csproj" -c Release -o /app/publish
 
-# Stage 4: Final image with Chrome + App + Lambda runtime
-FROM runtime-base AS final
+# Stage 3: Final - Lambda com código publicado + dependências Chrome
+FROM base AS final
 WORKDIR /var/task
-COPY --from=publish /app/publish .
 
-# Lambda handler
-ENTRYPOINT ["dotnet", "Radar.dll"]
+# Copia o app publicado para o diretório de execução da Lambda
+COPY --from=build /app/publish .
+
+# Define o entrypoint da Lambda
+CMD [ "Radar::Radar.Function::FunctionHandler" ]
