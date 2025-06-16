@@ -48,12 +48,21 @@ RUN mkdir -p /etc/apt/keyrings \
     && rm -rf /var/lib/apt/lists/*
 
 # Instala ChromeDriver compatível
-RUN CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | cut -d '.' -f 1) \
-    && CHROMEDRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION}") \
-    && curl -Lo /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip \
-    && unzip /tmp/chromedriver.zip -d /usr/local/bin/ \
-    && rm /tmp/chromedriver.zip \
-    && chmod +x /usr/local/bin/chromedriver
+RUN set -eux; \
+    CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | cut -d '.' -f 1) || true; \
+    if [ -z "$CHROME_VERSION" ]; then \
+      echo "Não conseguiu detectar versão do Chrome, usando fallback 114"; \
+      CHROME_VERSION=114; \
+    else \
+      echo "Versão do Chrome detectada: $CHROME_VERSION"; \
+    fi; \
+    CHROMEDRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION}"); \
+    echo "Versão do ChromeDriver: $CHROMEDRIVER_VERSION"; \
+    curl -Lo /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip; \
+    unzip /tmp/chromedriver.zip -d /usr/local/bin/; \
+    rm /tmp/chromedriver.zip; \
+    chmod +x /usr/local/bin/chromedriver
+
 
 # Stage 3: Lambda final (app publicado + runtime + Chrome)
 FROM public.ecr.aws/lambda/dotnet:9 AS final
