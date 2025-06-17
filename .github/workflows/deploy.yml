@@ -41,3 +41,8 @@ jobs:
         run: |
           docker push $ECR_URI:$IMAGE_TAG
 
+      - name: Atualizar a função Lambda
+        run: |
+          aws lambda update-function-code \
+            --function-name radar-lambda \
+            --image-uri $ECR_URI:$IMAGE_TAG
