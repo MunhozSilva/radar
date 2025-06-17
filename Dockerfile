@@ -47,4 +47,5 @@ COPY --from=base /etc/apt/sources.list.d/google-chrome.list /etc/apt/sources.lis
 
 COPY --from=build /app/publish .
 
-CMD ["Radar.Function::FunctionHandler"]
+CMD ["radar::Radar.Function::FunctionHandler"]
+
