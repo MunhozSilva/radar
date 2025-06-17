@@ -2,19 +2,19 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
-# Copia o arquivo do projeto e restaura dependencias
+# Copia o arquivo do projeto e restaura dependências
 COPY ["radar.csproj", "./"]
 RUN dotnet restore "radar.csproj"
 
-# Copia o codigo e publica a aplicacao
+# Copia o código e publica a aplicação
 COPY . .
 RUN dotnet publish "radar.csproj" -c Release -o /app/publish
 
-# Stage 2: Runtime base (runtime + libs para Chrome)
+# Stage 2: Runtime base (runtime + libs para Chrome e ChromeDriver)
 FROM mcr.microsoft.com/dotnet/runtime:9.0 AS base
 WORKDIR /app
 
-# Instala dependencias necessarias para rodar o Chrome e ChromeDriver
+# Instala dependências para o Chrome
 RUN apt-get update && apt-get install -y \
     ca-certificates \
     curl \
@@ -47,21 +47,12 @@ RUN mkdir -p /etc/apt/keyrings \
     && apt-get install -y google-chrome-stable \
     && rm -rf /var/lib/apt/lists/*
 
-# Instala ChromeDriver compativel
-RUN set -eux; \
-    CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | cut -d '.' -f 1) || true; \
-    if [ -z "$CHROME_VERSION" ]; then \
-      echo "Nao conseguiu detectar versao do Chrome, usando fallback 114"; \
-      CHROME_VERSION=114; \
-    else \
-      echo "Versao do Chrome detectada: $CHROME_VERSION"; \
-    fi; \
-    CHROMEDRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION}"); \
-    echo "Versao do ChromeDriver: $CHROMEDRIVER_VERSION"; \
-    curl -Lo /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip; \
-    unzip /tmp/chromedriver.zip -d /usr/local/bin/; \
-    rm /tmp/chromedriver.zip; \
-    chmod +x /usr/local/bin/chromedriver
+# Instala o ChromeDriver em versao fixa
+ENV CHROMEDRIVER_VERSION=137.0.7151.103
+RUN curl -Lo /tmp/chromedriver.zip "https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip" \
+    && unzip /tmp/chromedriver.zip -d /usr/local/bin/ \
+    && rm /tmp/chromedriver.zip \
+    && chmod +x /usr/local/bin/chromedriver
 
 # Stage 3: Lambda final (app publicado + runtime + Chrome)
 FROM public.ecr.aws/lambda/dotnet:9 AS final
