@@ -49,15 +49,13 @@ RUN mkdir -p /etc/apt/keyrings \
 
 # Instala o ChromeDriver em versao fixa
 ENV CHROMEDRIVER_VERSION=125.0.6422.78
-RUN set -eux; \
-    CHROMEDRIVER_VERSION=$(curl -sSL https://chromedriver.storage.googleapis.com/LATEST_RELEASE_125); \
-    echo "ChromeDriver version: $CHROMEDRIVER_VERSION"; \
-    curl -fsSL -o /tmp/chromedriver.zip \
-        "https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip"; \
-    test $(stat -c%s /tmp/chromedriver.zip) -gt 100000; \
-    unzip /tmp/chromedriver.zip -d /usr/local/bin/; \
-    rm /tmp/chromedriver.zip; \
-    chmod +x /usr/local/bin/chromedriver
+RUN curl -fsSL -o /tmp/chromedriver.zip \
+    "https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip" \
+    && test $(stat -c%s /tmp/chromedriver.zip) -gt 100000 \
+    && unzip /tmp/chromedriver.zip -d /usr/local/bin/ \
+    && rm /tmp/chromedriver.zip \
+    && chmod +x /usr/local/bin/chromedriver
+
 
 
 # Stage 3: Lambda final (app publicado + runtime + Chrome)
