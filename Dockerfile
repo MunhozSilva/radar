@@ -48,7 +48,7 @@ RUN mkdir -p /etc/apt/keyrings \
     && rm -rf /var/lib/apt/lists/*
 
 # Instala o ChromeDriver em versao fixa
-ENV CHROMEDRIVER_VERSION=137.0.7151.103
+ENV CHROMEDRIVER_VERSION=125.0.6422.78
 RUN curl -Lo /tmp/chromedriver.zip "https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip" \
     && unzip /tmp/chromedriver.zip -d /usr/local/bin/ \
     && rm /tmp/chromedriver.zip \
