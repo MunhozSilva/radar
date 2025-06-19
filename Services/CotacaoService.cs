@@ -12,7 +12,10 @@ public class CotacaoService
         options.AddArgument("--disable-gpu");
         options.AddArgument("--no-sandbox");
 
-        using var driver = new ChromeDriver(options);
+        var service = ChromeDriverService.CreateDefaultService("/usr/local/bin");
+        service.HideCommandPromptWindow = true;
+
+        using var driver = new ChromeDriver(service, options);
 
         try
         {
