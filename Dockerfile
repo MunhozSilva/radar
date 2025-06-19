@@ -36,17 +36,18 @@ RUN set -eux; \
     rm /tmp/chromedriver.zip; \
     chmod +x /usr/local/bin/chromedriver
 
-# Stage 3: Lambda final (tudo do base + app publicado)
+# Stage 3: Lambda final
 FROM public.ecr.aws/lambda/dotnet:9 AS final
 WORKDIR /var/task
 
-COPY --from=base /usr /usr
-COPY --from=base /lib /lib
-COPY --from=base /lib64 /lib64
-COPY --from=base /etc /etc
+# Copia apenas binários e libs necessárias do stage base
+COPY --from=base /usr/bin/google-chrome-stable /usr/bin/google-chrome-stable
+COPY --from=base /usr/local/bin/chromedriver /usr/local/bin/chromedriver
+COPY --from=base /lib/x86_64-linux-gnu /lib/x86_64-linux-gnu
+COPY --from=base /usr/lib/x86_64-linux-gnu /usr/lib/x86_64-linux-gnu
+COPY --from=base /usr/share/fonts /usr/share/fonts
 
 # Copia app publicado
 COPY --from=build /app/publish .
 
 CMD ["radar::Radar.Function::FunctionHandler"]
-
