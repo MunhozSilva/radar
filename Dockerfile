@@ -48,13 +48,14 @@ RUN set -eux; \
 FROM public.ecr.aws/lambda/dotnet:9 AS final
 WORKDIR /var/task
 
-# Copia o Chrome e ChromeDriver do stage base
+# Copia Chrome e ChromeDriver
 COPY --from=base /usr/bin/google-chrome-stable /usr/bin/google-chrome
 COPY --from=base /usr/local/bin/chromedriver /usr/local/bin/chromedriver
 
-# Copia apenas as bibliotecas necessárias para o Chrome funcionar
-COPY --from=base /usr/lib/x86_64-linux-gnu /usr/lib/x86_64-linux-gnu
-COPY --from=base /lib/x86_64-linux-gnu /lib/x86_64-linux-gnu
+# Copia todas as bibliotecas do sistema
+COPY --from=base /lib /lib
+COPY --from=base /lib64 /lib64
+COPY --from=base /usr/lib /usr/lib
 
 # Copia app publicado
 COPY --from=build /app/publish .
