@@ -4,7 +4,7 @@ namespace Radar.Services;
 
 public class VariacaoService
 {
-    private const decimal LimitePercentual = 1.5m;
+    private const decimal LimitePercentual = 0.4m;
 
     public bool DeveDispararAlerta(Acao acao)
     {
