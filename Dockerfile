@@ -45,6 +45,9 @@ COPY --from=build /app/publish .
 # Copia Chrome, ChromeDriver e libs exatas
 COPY --from=chrome /opt/chrome /opt/chrome
 
+# Garante que o ChromeDriver esteja no path padrão
+RUN cp /opt/chrome/chromedriver /usr/local/bin/chromedriver
+
 # Adiciona ao PATH
 ENV PATH="/opt/chrome:${PATH}"
 
