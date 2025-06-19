@@ -36,15 +36,22 @@ RUN set -eux; \
     rm /tmp/chromedriver.zip; \
     chmod +x /usr/local/bin/chromedriver
 
-# Stage 3: Lambda final (app publicado + runtime + Chrome)
+# Stage 3: Lambda final (app publicado + runtime + Chrome + dependências)
 FROM public.ecr.aws/lambda/dotnet:9 AS final
 WORKDIR /var/task
 
+# Instala dependências do Chrome necessárias para o driver funcionar
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates curl gnupg fontconfig libx11-dev libxss1 libappindicator3-1 libasound2 \
+    libatk-bridge2.0-0 libatk1.0-0 libcups2 libdbus-1-3 libgdk-pixbuf2.0-0 libnspr4 libnss3 \
+    libxcomposite1 libxdamage1 libxrandr2 xdg-utils unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copia Chrome e chromedriver do stage anterior
 COPY --from=base /usr/bin/google-chrome-stable /usr/bin/google-chrome-stable
 COPY --from=base /usr/local/bin/chromedriver /usr/local/bin/chromedriver
-COPY --from=base /etc/apt/keyrings/google-chrome.gpg /etc/apt/keyrings/google-chrome.gpg
-COPY --from=base /etc/apt/sources.list.d/google-chrome.list /etc/apt/sources.list.d/google-chrome.list
 
+# Copia app publicado
 COPY --from=build /app/publish .
 
 CMD ["radar::Radar.Function::FunctionHandler"]
