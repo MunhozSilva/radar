@@ -6,7 +6,7 @@ RUN dotnet restore "radar.csproj"
 COPY . .
 RUN dotnet publish "radar.csproj" -c Release -o /app/publish
 
-FROM public.ecr.aws/lambda/dotnet:6.0
+FROM public.ecr.aws/lambda/dotnet:6
 WORKDIR /var/task
 
 COPY --from=build /app/publish .
